@@ -1,3 +1,12 @@
+FROM node:22-alpine AS frontend-builder
+
+RUN mkdir -p cookbook/static/
+COPY vue3/ vue3/
+
+WORKDIR /vue3/
+RUN yarn install --frozen-lockfile
+RUN yarn build
+
 FROM python:3.13-alpine3.22
 
 #Install all dependencies.
@@ -52,6 +61,8 @@ EOF
 RUN /opt/recipes/venv/bin/python version.py
 # delete git repositories to reduce image size
 RUN find . -type d -name ".git" | xargs rm -rf
+
+COPY --from=frontend-builder /cookbook/static/vue3 /opt/recipes/cookbook/static/vue3
 
 RUN chmod +x boot.sh
 ENTRYPOINT ["/sbin/tini", "--", "/opt/recipes/boot.sh"]
